@@ -1,0 +1,6 @@
+instance_name = "common-demo"
+Cloud9Administrator = "arn:aws:iam::aws:policy/AWSCloud9Administrator"
+sg_name = "common-sg"
+instance_type = "t2.micro"
+environment_name = "remote-host-2"
+image_id = "resolve:ssm:/aws/service/cloud9/amis/amazonlinux-2-x86_64"
