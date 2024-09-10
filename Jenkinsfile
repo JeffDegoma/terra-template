@@ -9,8 +9,7 @@ pipeline {
             // ## terraform init
             // ## terraform plan
             // ## terraform apply
-            whoami
-        
+            echo "hi"
             // sh '''
             //     export PATH=/usr/lib/oracle/19.3/client64/bin:$PATH
             //     export LD_LIBRARY_PATH=/usr/lib/oracle/19.3/client64/lib
