@@ -4,11 +4,11 @@ pipeline {
     stages {
         stage('checkout repo') {
             steps {
-            ## git checkout instance repo
-            ## docker-compose up --build
-            ## terraform init
-            ## terraform plan
-            ## terraform apply
+            // ## git checkout instance repo
+            // ## docker-compose up --build
+            // ## terraform init
+            // ## terraform plan
+            // ## terraform apply
             whoami
         
             // sh '''
