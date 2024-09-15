@@ -1,6 +1,6 @@
 version: '3.7'
 services:
-  sam:
+  ec2:
     image: amazon/aws-cli:2.13.15
     working_dir: /work
     container_name: ec2
@@ -12,5 +12,7 @@ services:
       - AWS_ACCESS_KEY_ID=${aws_access_key_id}
       - AWS_SECRET_ACCESS_KEY=${aws_secret_access_key}
       - AWS_DEFAULT_REGION=${aws_default_region}
+      - TF_VAR_account=${account}
+      - TF_VAR_packer_ami_value=${packer_ami_value}
     command: 
       -  init.sh

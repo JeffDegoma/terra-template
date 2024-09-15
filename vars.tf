@@ -10,6 +10,9 @@ variable "Cloud9Administrator" {
 variable "sg_name" {
     default = "cloud9-sg"
 }
+variable "jenkins_sg" {
+    default = "jenkins-sg"
+}
 variable "instance_type" {
     default = "t3.medium"
 }
@@ -20,6 +23,9 @@ variable "image_id" {
     default = "resolve:ssm:/aws/service/cloud9/amis/amazonlinux-2-x86_64"
 }
 variable "packer_ami_value" {
+    default = ""
+}
+variable "account" {
     default = ""
 }
 
