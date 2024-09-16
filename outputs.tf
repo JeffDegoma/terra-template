@@ -1,7 +1,7 @@
-# output "RDS_ENDPOINT" {
-#   description = "rds endpoint"
-#   value       = module.rds_instance.db_instance_endpoint
-# }
+output "RDS_ENDPOINT" {
+  description = "rds endpoint"
+  value       = module.db.db_instance_endpoint
+}
 
 output "ami" {
   description = "ami name"
