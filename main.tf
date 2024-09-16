@@ -30,7 +30,7 @@ data "aws_ami" "packer-custom-ami" {
  most_recent = true
  owners           = ["self"]
 
- filter {
+  filter {
    name   = "name"
   values = [var.packer_ami_value]
 
@@ -109,6 +109,7 @@ module "ec2_instance" {
   iam_role_policies = {
     Cloud9Administrator = var.Cloud9Administrator
     accessPolicy = aws_iam_policy.accessPolicy.id
+    rdsAccess = aws_iam_policy.rds_access.id
   }
   tags = {
     Terraform   = "true"
@@ -152,8 +153,8 @@ module "rds_security_group" {
   ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
   ingress_with_cidr_blocks = [
     {
-      from_port   = 8080
-      to_port     = 8080
+      from_port   = 5432
+      to_port     = 5432
       protocol    = "tcp"
       description = "Jenkins ports"
     }
@@ -175,8 +176,8 @@ module "jenkins_ec2_security_group" {
   ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
   ingress_with_cidr_blocks = [
     {
-      from_port   = 5432
-      to_port     = 5432
+      from_port   = 8080
+      to_port     = 8080
       protocol    = "tcp"
       description = "RDS ports"
     }
@@ -191,20 +192,16 @@ module "jenkins_ec2_security_group" {
 resource "aws_iam_policy" "rds_access" {
   name = "rds_access"
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "rds-db:connect"
-            ],
-            "Resource": [
-                "arn:aws:rds-db:${local.region}:${var.account}:dbuser:*/*"
-            ]
-        }
+    Version =  "2012-10-17"
+    Statement = [{
+      Effect = "Allow",
+      Action =[
+        "rds-db:connect"
+    ],
+      Resource = "*"
+      }
     ]
-}
-        )
+})
 }
 
 
