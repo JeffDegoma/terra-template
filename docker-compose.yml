@@ -9,10 +9,10 @@ services:
       - ./:/work
     entrypoint: /bin/bash #override aws-cli entrypoint
     environment:
-      - AWS_ACCESS_KEY_ID=${aws_access_key_id}
-      - AWS_SECRET_ACCESS_KEY=${aws_secret_access_key}
-      - AWS_DEFAULT_REGION=${aws_default_region}
-      - TF_VAR_account=${account}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - TF_VAR_account=${ACCOUNT}
       - TF_VAR_packer_ami_value=${packer_ami_value}
     command: 
       -  init.sh
