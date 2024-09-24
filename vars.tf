@@ -2,7 +2,7 @@ variable "region" {
     default = "us-east-1"
 }
 variable "instance_name" {
-    default = "cloud9-demo-2"
+    default = "jenkins-main"
 }
 variable "Cloud9Administrator" {
     default = "arn:aws:iam::aws:policy/AWSCloud9Administrator"

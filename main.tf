@@ -37,6 +37,8 @@ data "aws_ami" "packer-custom-ami" {
  }
 }
 
+
+
 # data "http" "myip" {
 #   url = "https://ifconfig.me"
 # }
@@ -82,7 +84,7 @@ module "vpc" {
   tags = local.tags
 }
 
-module "ec2_instance" {
+module "jenkins_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   # ami = data.aws_ami.amazon-linux-2.id
   ami = data.aws_ami.packer-custom-ami.id
@@ -101,9 +103,9 @@ module "ec2_instance" {
   instance_type          = var.instance_type
   key_name               = "priv"
   monitoring             = true
-  vpc_security_group_ids = [module.ec2_security_group.security_group_id, module.jenkins_ec2_security_group.security_group_id]
-  associate_public_ip_address = true
-  subnet_id              = "${element(module.vpc.public_subnets, 0)}"
+  vpc_security_group_ids = [module.ec2_security_group.security_group_id, module.alb_sg.security_group_id, module.jenkins_ec2_security_group.security_group_id]
+  associate_public_ip_address = false
+  subnet_id              = "${element(module.vpc.private_subnets, 0)}"
   create_iam_instance_profile = true
   iam_role_description        = "cloud9 permissions"
   iam_role_policies = {
@@ -115,6 +117,86 @@ module "ec2_instance" {
     Terraform   = "true"
     Environment = "dev"
   }
+}
+
+module "ec2_instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+
+  name = "bastion-instance"
+
+  instance_type          = "t2.micro"
+  key_name               = "priv"
+  monitoring             = true
+  vpc_security_group_ids = ["${module.ec2_security_group.security_group_id}"]
+  associate_public_ip_address = true
+  subnet_id              = "${element(module.vpc.public_subnets, 0)}"
+
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+  }
+}
+
+
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 8.0"
+
+  name = local.name
+
+  load_balancer_type = "application"
+
+  vpc_id          = module.vpc.vpc_id
+  subnets         = module.vpc.public_subnets
+  security_groups = [module.alb_sg.security_group_id]
+
+   http_tcp_listeners = [
+   {
+     port               = 80
+     protocol           = "HTTP"
+     target_group_index = 0
+   },
+  ]
+
+  target_groups = [
+    {
+      name             = "${var.instance_name}"
+      backend_protocol = "HTTP"
+      backend_port     = "80"
+      target_type      = "instance"
+      health_check = {
+        enabled             = true
+        interval            = 30
+        path                = "/login"
+      }
+      targets = {
+      jenkins = {
+        target_id = module.jenkins_instance.id
+        port      = 8080
+      }
+    }
+    }
+  ]
+
+  tags = local.tags
+}
+
+
+module "alb_sg" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 4.0"
+
+  name        = "${local.name}-alb"
+  description = "alb security group"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_rules       = ["http-80-tcp"]
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+
+  egress_rules       = ["all-all"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
+
+  tags = local.tags
 }
 
 
@@ -134,13 +216,45 @@ module "ec2_security_group" {
       protocol    = "tcp"
       description = "User-service ports"
     }
-  
   ] 
-  egress_rules = ["all-all"]
+  
+  egress_rules       = ["all-all"]
+  egress_cidr_blocks = [local.vpc_cidr]
 
   tags = local.tags
 
 }
+
+
+
+module "jenkins_ec2_security_group" {
+  source = "terraform-aws-modules/security-group/aws"
+  version = "~> 4.0"
+
+  name        = var.jenkins_sg
+  description = "${var.jenkins_sg} security group"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = 8080
+      to_port     = 8080
+      protocol    = "tcp"
+      description = "jenkins ports"
+    }
+  
+  ]
+  computed_ingress_with_source_security_group_id = [
+    {
+      rule                     = "http-80-tcp"
+      source_security_group_id = module.alb_sg.security_group_id
+    }
+  ]
+  egress_rules = ["all-all"]
+
+  tags = local.tags
+}
+
 
 module "rds_security_group" {
   source = "terraform-aws-modules/security-group/aws"
@@ -165,28 +279,6 @@ module "rds_security_group" {
   tags = local.tags
 }
 
-module "jenkins_ec2_security_group" {
-  source = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = var.jenkins_sg
-  description = "${var.jenkins_sg} security group"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
-  ingress_with_cidr_blocks = [
-    {
-      from_port   = 8080
-      to_port     = 8080
-      protocol    = "tcp"
-      description = "RDS ports"
-    }
-  
-  ]
-  egress_rules = ["all-all"]
-
-  tags = local.tags
-}
 
 
 resource "aws_iam_policy" "rds_access" {
@@ -221,6 +313,7 @@ resource "aws_iam_policy" "accessPolicy" {
       "ec2:DescribeInstances",
       "ec2:TerminateInstances",
       "ec2:DescribeInstanceStatus",
+      "ec2:DescribeVpcAttribute",
       "ec2:DescribeSpotFleetRequests"
     ],
       Resource = "*"
@@ -271,29 +364,28 @@ module "db" {
   username = "complete_postgresql"
   port     = 5432
   password = "somepasswordhere"
-
-  # Setting manage_master_user_password_rotation to false after it
-  # has previously been set to true disables automatic rotation
-  # however using an initial value of false (default) does not disable
-  # automatic rotation and rotation will be handled by RDS.
-  # manage_master_user_password_rotation allows users to configure
-  # a non-default schedule and is not meant to disable rotation
-  # when initially creating / enabling the password management feature
+  # iam_database_authentication_enabled = true #set to true to enable token access
+  
+  manage_master_user_password = false
   manage_master_user_password_rotation              = false
-  master_user_password_rotate_immediately           = false
-  master_user_password_rotation_schedule_expression = "rate(15 days)"
 
   multi_az               = true
   db_subnet_group_name   = module.vpc.database_subnet_group
   vpc_security_group_ids = [module.rds_security_group.security_group_id]
-  
 
   backup_retention_period = 1
   skip_final_snapshot     = true
   deletion_protection     = false
 
-  
-
   tags = local.tags
 
 }
+
+
+# data "aws_vpc" "lookup" {
+#   tags = {
+#     Name = module.vpc.name
+#   }
+# }
+
+
