@@ -4,27 +4,52 @@ pipeline {
     stages {
         stage('checkout repo') {
             steps {
-            // ## git checkout instance repo
-            // ## docker-compose up --build
-            // ## terraform init
-            // ## terraform plan
-            // ## terraform apply
-            echo "hi"
-            // sh '''
-            //     export PATH=/usr/lib/oracle/19.3/client64/bin:$PATH
-            //     export LD_LIBRARY_PATH=/usr/lib/oracle/19.3/client64/lib
-            //     export TNS_ADMIN=/usr/lib/oracle/19.3/client64/lib/network/admin
-
-            //     sqlplus 'username/password@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=myrdsinstance.abcdefghij.us-west-2.rds.amazonaws.com)(PORT=1521))(CONNECT_DATA=(SID=ORCL)))' @my_sql_script.sql
-            // '''
-            }
+                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                
+                sh '''
+                    sudo AWS_ACCESS_KEY_ID=$AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID docker-compose up --build --remove-orphans -d
+                '''
+                }
+              }
+       
         }
-        //  stage('Deploy the Application') { 
-        //       steps {
-        //           sh "docker-compose up -d"
-
-        //       }
-        //   }
+        
+         stage('Terraform pull state') { 
+            steps {
+                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                s3Download(file: 'terraform.tfstate', bucket: 'terraform-backend-pakil', path: 'terraform.tfstate', force: true)
+                }
+            }
+          }
+         stage('Terraform Init') { 
+              steps {
+	              withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                  sh '''
+		            sleep 20s
+                    sudo docker exec -i ec2 terraform init
+                    '''
+                 }
+              }
+          }
+         stage('Terraform plan') { 
+            when {
+                expression {env.CHOICE == 'destroy'}
+            }
+            steps {
+                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                    sh 'sudo docker exec -i ec2 terraform plan --target=module.rds_security_group --target=module.db'
+                }
+            }
+          }
+         stage('Terraform apply') { 
+            steps {
+                withAWS(credentials: 'aws-credentials', region: 'us-east-1') {
+                    sh 'sudo docker exec -i ec2 terraform apply --auto-approve --target=module.rds_security_group --target=module.db'
+                }
+            }
+          }
     }
 }
+
+
 
