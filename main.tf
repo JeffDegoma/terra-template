@@ -1,8 +1,16 @@
-
 provider "aws" {
     version =  ">= 4.55"
     region  = var.region
 }
+
+# terraform {  
+#     backend "s3" {
+#         bucket  = "terraform-backend-pakil"
+#         encrypt = true
+#         key     = "terraform.tfstate"    
+#         region  = "us-east-1"  
+#     }
+# }
 
 locals {
   region = var.region
@@ -32,16 +40,17 @@ data "aws_ami" "packer-custom-ami" {
 
   filter {
    name   = "name"
-  values = [var.packer_ami_value]
+   values = [var.packer_ami_value]
+  #  values = "thurs-sept-26 1727334319"
 
  }
 }
 
 
+resource "aws_s3_bucket" "terraform-state" {
+    bucket = "terra-state-pakil"
+}
 
-# data "http" "myip" {
-#   url = "https://ifconfig.me"
-# }
 
 
 ##################################################################################################
@@ -86,8 +95,8 @@ module "vpc" {
 
 module "jenkins_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  # ami = data.aws_ami.amazon-linux-2.id
   ami = data.aws_ami.packer-custom-ami.id
+  # ami = "ami-0bc355d7bf34f9e61"
   name = var.instance_name
 
   # user_data_base64            = base64encode(local.user_data)
@@ -226,7 +235,6 @@ module "ec2_security_group" {
 }
 
 
-
 module "jenkins_ec2_security_group" {
   source = "terraform-aws-modules/security-group/aws"
   version = "~> 4.0"
@@ -235,18 +243,17 @@ module "jenkins_ec2_security_group" {
   description = "${var.jenkins_sg} security group"
   vpc_id      = module.vpc.vpc_id
 
-  ingress_with_cidr_blocks = [
-    {
-      from_port   = 8080
-      to_port     = 8080
-      protocol    = "tcp"
-      description = "jenkins ports"
-    }
-  
-  ]
-  computed_ingress_with_source_security_group_id = [
+ 
+  ingress_with_source_security_group_id = [
     {
       rule                     = "http-80-tcp"
+      source_security_group_id = module.alb_sg.security_group_id
+    },
+    {
+      from_port                = 8080
+      to_port                  = 8080
+      protocol                 = 6
+      description              = "alb to jenkins"
       source_security_group_id = module.alb_sg.security_group_id
     }
   ]
