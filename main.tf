@@ -8,7 +8,7 @@ terraform {
         bucket  = "terraform-backend-pakil-state"
         encrypt = true
         key     = "terraform.tfstate"    
-        region  = var.region
+        region  = "us-east-1"
     }
 }
 
@@ -41,8 +41,6 @@ data "aws_ami" "packer-custom-ami" {
   filter {
    name   = "name"
    values = [var.packer_ami_value]
-  #  values = "thurs-sept-26 1727334319"
-
  }
 }
 
@@ -78,7 +76,7 @@ module "vpc" {
   public_subnet_names = ["management-a", "management-b"]
   azs             = ["us-east-1a", "us-east-1b"] //more azs
   public_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
-  private_subnets = ["10.0.3.0/24", "10.0.4.0/24", "10.0.5.0/24"]
+  # private_subnets = ["10.0.3.0/24", "10.0.4.0/24", "10.0.5.0/24"]
   database_subnets = ["10.0.6.0/24", "10.0.7.0/24", "10.0.8.0/24"]
   create_igw      = true
   enable_dns_hostnames = true
@@ -93,7 +91,6 @@ module "vpc" {
 module "jenkins_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   ami = data.aws_ami.packer-custom-ami.id
-  # ami = "ami-0bc355d7bf34f9e61"
   name = var.instance_name
 
   user_data_base64            = base64encode(local.user_data)
@@ -389,12 +386,3 @@ module "db" {
   tags = local.tags
 
 }
-
-
-# data "aws_vpc" "lookup" {
-#   tags = {
-#     Name = module.vpc.name
-#   }
-# }
-
-
