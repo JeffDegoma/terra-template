@@ -3,14 +3,14 @@ provider "aws" {
     region  = var.region
 }
 
-# terraform {  
-#     backend "s3" {
-#         bucket  = "terraform-backend-pakil"
-#         encrypt = true
-#         key     = "terraform.tfstate"    
-#         region  = "us-east-1"  
-#     }
-# }
+terraform {  
+    backend "s3" {
+        bucket  = "terraform-backend-pakil-state"
+        encrypt = true
+        key     = "terraform.tfstate"    
+        region  = var.region
+    }
+}
 
 locals {
   region = var.region
@@ -25,8 +25,8 @@ locals {
   }
   user_data = <<-EOT
     #!/bin/bash
-    cd /tmp
-    wget "${module.ec2_instance.public_ip}:8080/jnlpJars/jenkins-cli.jar"
+    cd /var/lib/jenkins
+    bash jenkins-init
   EOT
 }
 
@@ -44,11 +44,6 @@ data "aws_ami" "packer-custom-ami" {
   #  values = "thurs-sept-26 1727334319"
 
  }
-}
-
-
-resource "aws_s3_bucket" "terraform-state" {
-    bucket = "terra-state-pakil"
 }
 
 
@@ -78,7 +73,9 @@ module "vpc" {
   name = local.name
   cidr = local.vpc_cidr
   create_database_subnet_group = true
-
+  //specify database subnet group name
+  database_subnet_names    = ["DB Subnet One", "DB Subnet Two", "DB Subnet Three"]
+  public_subnet_names = ["management-a", "management-b"]
   azs             = ["us-east-1a", "us-east-1b"] //more azs
   public_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
   private_subnets = ["10.0.3.0/24", "10.0.4.0/24", "10.0.5.0/24"]
@@ -90,7 +87,7 @@ module "vpc" {
   enable_nat_gateway = true
   single_nat_gateway = true
 
-  tags = local.tags
+  # tags = local.tags
 }
 
 module "jenkins_instance" {
@@ -99,7 +96,8 @@ module "jenkins_instance" {
   # ami = "ami-0bc355d7bf34f9e61"
   name = var.instance_name
 
-  # user_data_base64            = base64encode(local.user_data)
+  user_data_base64            = base64encode(local.user_data)
+  user_data_replace_on_change = true
   
   root_block_device = [
     {
@@ -122,11 +120,15 @@ module "jenkins_instance" {
     accessPolicy = aws_iam_policy.accessPolicy.id
     rdsAccess = aws_iam_policy.rds_access.id
   }
+
+
   tags = {
     Terraform   = "true"
     Environment = "dev"
   }
 }
+
+
 
 module "ec2_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
@@ -228,7 +230,7 @@ module "ec2_security_group" {
   ] 
   
   egress_rules       = ["all-all"]
-  egress_cidr_blocks = [local.vpc_cidr]
+  egress_cidr_blocks = [local.vpc_cidr] 
 
   tags = local.tags
 
@@ -351,7 +353,7 @@ resource "aws_iam_policy" "accessPolicy" {
 
 module "db" {
   source = "terraform-aws-modules/rds/aws"
-  identifier = local.name
+  identifier = "${local.name}-db"
 
   # All available versions: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html#PostgreSQL.Concepts
   engine                   = "postgres"
@@ -371,7 +373,7 @@ module "db" {
   username = "complete_postgresql"
   port     = 5432
   password = "somepasswordhere"
-  # iam_database_authentication_enabled = true #set to true to enable token access
+  iam_database_authentication_enabled = true #set to true to enable token access
   
   manage_master_user_password = false
   manage_master_user_password_rotation              = false
