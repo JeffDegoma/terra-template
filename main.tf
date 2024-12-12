@@ -5,7 +5,7 @@ provider "aws" {
 
 terraform {  
     backend "s3" {
-        bucket  = "terraform-backend-pakil-state"
+        bucket  = "terraform-backend-pakil-state-1"
         encrypt = true
         key     = "terraform.tfstate"    
         region  = "us-east-1"
@@ -140,7 +140,6 @@ module "ec2_instance" {
 # })}")
   # user_data_base64            = base64encode(local.user_data)
   # user_data_replace_on_change = true
-  
   vpc_security_group_ids = ["${module.ec2_security_group.security_group_id}", module.efs.security_group_id ]
   associate_public_ip_address = true
   subnet_id              = "${element(module.vpc.public_subnets, 0)}"
@@ -302,7 +301,12 @@ resource "aws_iam_policy" "accessPolicy" {
       "ec2:TerminateInstances",
       "ec2:DescribeInstanceStatus",
       "ec2:DescribeVpcAttribute",
-      "ec2:DescribeSpotFleetRequests"
+      "ec2:DescribeSpotFleetRequests",
+      "kms:Encrypt", 
+      "kms:Decrypt", 
+      "kms:ReEncrypt*", 
+      "kms:GenerateDataKey*", 
+      "kms:DescribeKey"
     ],
       Resource = "*"
     },
