@@ -3,9 +3,13 @@ output "RDS_ENDPOINT" {
   value       = module.db.db_instance_endpoint
 }
 
+output "alb" {
+  description = "load balancer dns"
+  value = module.alb.lb_dns_name
+}
 output "ami" {
   description = "ami name"
-  value = data.aws_ami.packer-custom-ami
+  value = data.aws_ami.packer-custom-ami.id
 }
 
 

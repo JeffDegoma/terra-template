@@ -19,7 +19,5 @@ echo "Terraform running"
 
 
 
-
-
 tail -f /dev/null #keeps container running
 

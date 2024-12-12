@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   ec2:
     image: amazon/aws-cli:2.13.15
