@@ -89,7 +89,8 @@ data "aws_ami" "packer-custom-ami" {
 
   filter {
    name   = "name"
-   values = [var.packer_ami_value]
+  #  values = [var.packer_ami_value]
+   values = [var.packer_ami_value ? data.terraform_remote_state.remote.outputs.ami_id : null]
  }
 }
 
