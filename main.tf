@@ -12,6 +12,17 @@ terraform {
     }
 }
 
+ data "terraform_remote_state" "remote" {
+      backend =  "s3"
+      config = {
+        bucket  = "terraform-backend-pakil-state-1"
+        key     = "terraform.tfstate"    
+        region  = "us-east-1"
+      }
+}
+
+
+
 locals {
   region = var.region
   name   = "demo-${basename(path.cwd)}-${var.project_name}"
@@ -131,7 +142,6 @@ module "ec2_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
 
   name = "bastion-instance"
-  # ami = data.aws_ami.packer-custom-ami.id
   instance_type          = "t2.micro"
   key_name               = "priv"
   monitoring             = true
