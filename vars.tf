@@ -8,7 +8,7 @@ variable "Cloud9Administrator" {
     default = "arn:aws:iam::aws:policy/AWSCloud9Administrator"
 }
 variable "sg_name" {
-    default = "cloud9-sg"
+    default = "bastion-sg"
 }
 variable "jenkins_sg" {
     default = "jenkins-sg"
@@ -30,5 +30,10 @@ variable "account" {
 }
 
 variable "project_name" {
-    default = "cloud9"
+    default = "test"
 }
+
+variable "ami"{
+    default=true
+}
+
