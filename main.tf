@@ -28,6 +28,7 @@ locals {
   name   = "demo-${basename(path.cwd)}-${var.project_name}"
   jenkins_port = "8080"
   filesystem-id = module.efs.id
+  ami = var.ami
   account = "654654507397"
 
   vpc_cidr = "10.0.0.0/16"
@@ -90,7 +91,7 @@ data "aws_ami" "packer-custom-ami" {
   filter {
    name   = "name"
   #  values = [var.packer_ami_value]
-   values = [var.packer_ami_value ? data.terraform_remote_state.remote.outputs.ami_id : null]
+   values = [var.ami ? var.packer_ami_value : data.terraform_remote_state.remote.outputs.id]
  }
 }
 
@@ -415,6 +416,7 @@ module "autoscaling" {
 
 
 echo export FILESYSTEM_ID=${local.filesystem-id} >> ~/.bashrc
+echo export TF_VAR_ami=${local.ami} >> ~/.bashrc
 
 source ~/.bashrc
 cd /home/admin

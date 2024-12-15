@@ -32,3 +32,8 @@ variable "account" {
 variable "project_name" {
     default = "test"
 }
+
+variable "ami"{
+    default=true
+}
+
