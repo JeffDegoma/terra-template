@@ -27,7 +27,6 @@ locals {
   region = var.region
   name   = "demo-${basename(path.cwd)}-${var.project_name}"
   jenkins_port = "8080"
-  filesystem-id = module.efs.id
   ami = var.ami
   account = "654654507397"
 
@@ -45,7 +44,6 @@ locals {
 echo 'export PAKIL=HI >> ~/.bashrc'
 
 
-echo export FILESYSTEM_ID=${local.filesystem-id} >> ~/.bashrc
 
 source ~/.bashrc
 
