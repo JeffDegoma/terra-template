@@ -2,13 +2,16 @@ variable "region" {
     default = "us-east-1"
 }
 variable "instance_name" {
-    default = "cloud9-demo-2"
+    default = "jenkins-main"
 }
 variable "Cloud9Administrator" {
     default = "arn:aws:iam::aws:policy/AWSCloud9Administrator"
 }
 variable "sg_name" {
-    default = "cloud9-sg"
+    default = "bastion-sg"
+}
+variable "jenkins_sg" {
+    default = "jenkins-sg"
 }
 variable "instance_type" {
     default = "t3.medium"
@@ -22,7 +25,15 @@ variable "image_id" {
 variable "packer_ami_value" {
     default = ""
 }
+variable "account" {
+    default = ""
+}
 
 variable "project_name" {
-    default = "cloud9"
+    default = "test"
 }
+
+variable "ami"{
+    default=true
+}
+
