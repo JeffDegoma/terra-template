@@ -5,8 +5,8 @@ output "RDS_ENDPOINT" {
 
 
 
-output "vpc_name"{
-  description = "load balancer dns"
-  value = module.vpc.name
-}
+# output "vpc_name"{
+#   description = "load balancer dns"
+#   value = module.vpc.name
+# }
 

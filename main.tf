@@ -85,7 +85,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
 
-  name = data.terraform_remote_state.remote.outputs.vpc_name
+  name = data.terraform_remote_state.remote.outputs.name
   cidr = local.vpc_cidr
   create_database_subnet_group = true
   //specify database subnet group name
@@ -131,7 +131,6 @@ module "db" {
   port     = 5432
   password = "somepasswordhere"
   iam_database_authentication_enabled = true #set to true to enable token access
-  snapshot_identifier = ""
   
   manage_master_user_password = false
   manage_master_user_password_rotation              = false
@@ -149,7 +148,7 @@ module "db" {
 }
 
 data "aws_db_snapshot" "latest_snapshot" {
-  db_instance_identifier = module.db.snapshot_identifier
+  db_instance_identifier = module.db.db_instance_identifier
   most_recent            = true
 }
 
@@ -163,7 +162,7 @@ module "rds_security_group" {
 
   name        = "rds_security_group"
   description = " rds security group"
-  vpc_id      = data.terraform_remote_state.remote.outputs.vpc_id
+  vpc_id      = data.terraform_remote_state.remote.outputs.id
 
   ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
   ingress_with_cidr_blocks = [
