@@ -5,15 +5,13 @@ provider "aws" {
 
 terraform {  
     backend "s3" {
-        bucket  = "terraform-backend-pakil-state"
+        bucket  = "terraform-backend-pakil-state-1"
         encrypt = true
         key     = "terraform.tfstate"    
         region  = "us-east-1"
     }
 }
 
-<<<<<<< HEAD
-=======
  data "terraform_remote_state" "remote" {
       backend =  "s3"
       config = {
@@ -83,7 +81,6 @@ EOF
 #   zone_id     = data.aws_route53_zone.this.id
 # }
 
->>>>>>> jenkins
 
 
 module "vpc" {
