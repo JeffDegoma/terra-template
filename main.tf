@@ -12,6 +12,78 @@ terraform {
     }
 }
 
+<<<<<<< HEAD
+=======
+ data "terraform_remote_state" "remote" {
+      backend =  "s3"
+      config = {
+        bucket  = "terraform-backend-pakil-state-1"
+        key     = "terraform.tfstate"    
+        region  = "us-east-1"
+      }
+}
+
+
+
+locals {
+  region = var.region
+  name   = "demo-${basename(path.cwd)}-${var.project_name}"
+  jenkins_port = "8080"
+  filesystem-id = module.efs.id
+  ami = var.ami
+  account = "654654507397"
+
+  vpc_cidr = "10.0.0.0/16"
+  #azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+
+  tags = {
+    Name       = local.name
+    Example    = local.name
+  }
+
+  user_data = <<-EOF
+#!/bin/bash
+
+echo 'export PAKIL=HI >> ~/.bashrc'
+
+
+echo export FILESYSTEM_ID=${local.filesystem-id} >> ~/.bashrc
+
+source ~/.bashrc
+
+mount -t efs -o tls $FILESYSTEM_ID /var/lib/jenkins
+EOF
+}
+
+
+### Data sources provide information about resources that are not managed by the current Terraform configuration. 
+
+
+# data "aws_route53_zone" "this" {
+#   name = "${local.account}.realhandsonlabs.net"
+# }
+
+################################################################################
+#ACM for loadbalancer
+################################################################################
+
+# module "acm" {
+#   source  = "terraform-aws-modules/acm/aws"
+#   version = "~> 3.0"
+
+#   domain_name = "${local.account}.realhandsonlabs.net"
+#   zone_id     = data.aws_route53_zone.this.id
+# }
+
+# module "wildcard_cert" {
+#   source  = "terraform-aws-modules/acm/aws"
+#   version = "~> 3.0"
+
+#   domain_name = "*.${local.account}.realhandsonlabs.net"
+#   zone_id     = data.aws_route53_zone.this.id
+# }
+
+>>>>>>> jenkins
 
 
 module "vpc" {
