@@ -57,7 +57,6 @@ EOF
 ### Data sources provide information about resources that are not managed by the current Terraform configuration. 
 
 
-
 # data "aws_route53_zone" "this" {
 #   name = "${local.account}.realhandsonlabs.net"
 # }
