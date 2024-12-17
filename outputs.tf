@@ -10,3 +10,13 @@ output "RDS_ENDPOINT" {
 #   value = module.vpc.name
 # }
 
+
+output "vpc" {
+  value       = module.vpc
+  description = "The VPC ID"
+}
+
+output "vpc_id" {
+  value       = module.vpc.vpc_id
+  description = "The VPC ID"
+}
