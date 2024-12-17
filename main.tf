@@ -18,7 +18,6 @@ terraform {
 }
 
 
-
 locals {
   region = var.region
   name   = "demo-${basename(path.cwd)}-${var.project_name}"
@@ -40,44 +39,12 @@ locals {
 echo 'export PAKIL=HI >> ~/.bashrc'
 
 
-echo export FILESYSTEM_ID=${local.filesystem-id} >> ~/.bashrc
-
 source ~/.bashrc
 
 mount -t efs -o tls $FILESYSTEM_ID /var/lib/jenkins
 EOF
 }
 
-
-### Data sources provide information about resources that are not managed by the current Terraform configuration. 
-
-
-# data "aws_route53_zone" "this" {
-#   name = "${local.account}.realhandsonlabs.net"
-# }
-
-################################################################################
-#ACM for loadbalancer
-################################################################################
-
-# module "acm" {
-#   source  = "terraform-aws-modules/acm/aws"
-#   version = "~> 3.0"
-
-#   domain_name = "${local.account}.realhandsonlabs.net"
-#   zone_id     = data.aws_route53_zone.this.id
-# }
-
-# module "wildcard_cert" {
-#   source  = "terraform-aws-modules/acm/aws"
-#   version = "~> 3.0"
-
-#   domain_name = "*.${local.account}.realhandsonlabs.net"
-#   zone_id     = data.aws_route53_zone.this.id
-# }
-
-
-## This fetches AMI resources from AWS
 
 
 data "aws_caller_identity" "current" {}
@@ -135,7 +102,8 @@ module "rds_security_group" {
 
   name        = "rds_security_group"
   description = " rds security group"
-  vpc_id      = module.vpc.vpc_id
+  # vpc_id      = module.vpc.vpc_id
+  vpc_id      = data.terraform_remote_state.remote.outputs.vpc_id
 
   ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
   ingress_with_cidr_blocks = [
