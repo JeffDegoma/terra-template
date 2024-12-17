@@ -1,7 +1,3 @@
-provider "aws" {
-    version =  ">= 4.55"
-    region  = var.region
-}
 
 terraform {  
     backend "s3" {
@@ -44,6 +40,7 @@ locals {
 echo 'export PAKIL=HI >> ~/.bashrc'
 
 
+echo export FILESYSTEM_ID=${local.filesystem-id} >> ~/.bashrc
 
 source ~/.bashrc
 
@@ -80,12 +77,34 @@ EOF
 # }
 
 
+## This fetches AMI resources from AWS
+
+
+data "aws_caller_identity" "current" {}
+
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+
+
+
+## AWS VPC module to simplify networking services
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
 
-  name = data.terraform_remote_state.remote.outputs.name
+  name = local.name
   cidr = local.vpc_cidr
   create_database_subnet_group = true
   //specify database subnet group name
@@ -105,6 +124,50 @@ module "vpc" {
   # tags = local.tags
 }
 
+
+
+
+
+
+module "rds_security_group" {
+  source = "terraform-aws-modules/security-group/aws"
+  version = "~> 4.0"
+
+  name        = "rds_security_group"
+  description = " rds security group"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = 5432
+      to_port     = 5432
+      protocol    = "tcp"
+      description = "RDS ports"
+    }
+  
+  ]
+  egress_rules = ["all-all"]
+
+  tags = local.tags
+}
+
+
+
+resource "aws_iam_policy" "rds_access" {
+  name = "rds_access"
+  policy = jsonencode({
+    Version =  "2012-10-17"
+    Statement = [{
+      Effect = "Allow",
+      Action =[
+        "rds-db:connect"
+    ],
+      Resource = "*"
+      }
+    ]
+})
+}
 
 
 
@@ -147,49 +210,11 @@ module "db" {
 
 }
 
-data "aws_db_snapshot" "latest_snapshot" {
-  db_instance_identifier = module.db.db_instance_identifier
-  most_recent            = true
-}
 
 
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
+##################################################################################################
 
-
-
-module "rds_security_group" {
-  source = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "rds_security_group"
-  description = " rds security group"
-  vpc_id      = data.terraform_remote_state.remote.outputs.id
-
-  ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
-  ingress_with_cidr_blocks = [
-    {
-      from_port   = 5432
-      to_port     = 5432
-      protocol    = "tcp"
-      description = "RDS ports"
-    }
-  
-  ]
-  egress_rules = ["all-all"]
-
-  tags = local.tags
-}
-
-resource "aws_iam_policy" "rds_access" {
-  name = "rds_access"
-  policy = jsonencode({
-    Version =  "2012-10-17"
-    Statement = [{
-      Effect = "Allow",
-      Action =[
-        "rds-db:connect"
-    ],
-      Resource = "*"
-      }
-    ]
-})
-}
