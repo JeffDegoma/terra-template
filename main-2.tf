@@ -57,7 +57,6 @@
 # ### Data sources provide information about resources that are not managed by the current Terraform configuration. 
 
 
-
 # # data "aws_route53_zone" "this" {
 # #   name = "${local.account}.realhandsonlabs.net"
 # # }
@@ -255,28 +254,7 @@
 # }
 
 
-# module "rds_security_group" {
-#   source = "terraform-aws-modules/security-group/aws"
-#   version = "~> 4.0"
 
-#   name        = "rds_security_group"
-#   description = " rds security group"
-#   vpc_id      = module.vpc.vpc_id
-
-#   ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
-#   ingress_with_cidr_blocks = [
-#     {
-#       from_port   = 5432
-#       to_port     = 5432
-#       protocol    = "tcp"
-#       description = "RDS ports"
-#     }
-  
-#   ]
-#   egress_rules = ["all-all"]
-
-#   tags = local.tags
-# }
 
 
 
@@ -355,44 +333,6 @@
 
 
 
-# module "db" {
-#   source = "terraform-aws-modules/rds/aws"
-#   identifier = "${local.name}-db"
-
-#   # All available versions: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html#PostgreSQL.Concepts
-#   engine                   = "postgres"
-#   engine_version           = "14"
-#   engine_lifecycle_support = "open-source-rds-extended-support-disabled"
-#   family                   = "postgres14" # DB parameter group
-#   major_engine_version     = "14"         # DB option group
-#   instance_class           = "db.t3.medium"
-
-#   allocated_storage     = 20
-#   max_allocated_storage = 100
-
-#   # NOTE: Do NOT use 'user' as the value for 'username' as it throws:
-#   # "Error creating DB Instance: InvalidParameterValue: MasterUsername
-#   # user cannot be used as it is a reserved word used by the engine"
-#   db_name  = "completePostgresql"
-#   username = "complete_postgresql"
-#   port     = 5432
-#   password = "somepasswordhere"
-#   iam_database_authentication_enabled = true #set to true to enable token access
-  
-#   manage_master_user_password = false
-#   manage_master_user_password_rotation              = false
-
-#   multi_az               = true
-#   db_subnet_group_name   = module.vpc.database_subnet_group
-#   vpc_security_group_ids = [module.rds_security_group.security_group_id]
-
-#   backup_retention_period = 1
-#   skip_final_snapshot     = true
-#   deletion_protection     = false
-
-#   tags = local.tags
-
-# }
 
 
 
@@ -606,68 +546,78 @@
 # }
 
 
-# # module "jenkins_instance" {
-# #   source  = "terraform-aws-modules/ec2-instance/aws"
-# #   ami = data.aws_ami.packer-custom-ami.id
-# #   name = var.instance_name
+# module "rds_security_group" {
+#   source = "terraform-aws-modules/security-group/aws"
+#   version = "~> 4.0"
 
-# #   user_data_base64            = base64encode(local.user_data)
-# #   user_data_replace_on_change = true
+#   name        = "rds_security_group"
+#   description = " rds security group"
+#   # vpc_id      = module.vpc.vpc_id
+#   vpc_id      = data.terraform_remote_state.remote.outputs.vpc_id
+
+#   ingress_cidr_blocks = ["0.0.0.0/0"] # change or remove
+#   ingress_with_cidr_blocks = [
+#     {
+#       from_port   = 5432
+#       to_port     = 5432
+#       protocol    = "tcp"
+#       description = "RDS ports"
+#     }
   
-# #   root_block_device = [
-# #     {
-# #       encrypted   = true
-# #       volume_type = "gp3"
-# #       throughput  = 200
-# #       volume_size = 8
-# #     },
-# #   ]
-# #   instance_type          = var.instance_type
-# #   key_name               = "priv"
-# #   monitoring             = true
-# #   vpc_security_group_ids = [module.ec2_security_group.security_group_id, module.alb_sg.security_group_id, module.jenkins_ec2_security_group.security_group_id]
-# #   associate_public_ip_address = false
-# #   subnet_id              = "${element(module.vpc.private_subnets, 0)}"
-# #   create_iam_instance_profile = true
-# #   iam_role_description        = "cloud9 permissions"
-# #   iam_role_policies = {
-# #     Cloud9Administrator = var.Cloud9Administrator
-# #     accessPolicy = aws_iam_policy.accessPolicy.id
-# #     rdsAccess = aws_iam_policy.rds_access.id
-# #   }
+#   ]
+#   egress_rules = ["all-all"]
 
-
-# #   tags = {
-# #     Terraform   = "true"
-# #     Environment = "dev"
-# #   }
-# # }
+#   tags = local.tags
+# }
 
 
 
-# # module "jenkins_ec2_security_group" {
-# #   source = "terraform-aws-modules/security-group/aws"
-# #   version = "~> 4.0"
 
-# #   name        = var.jenkins_sg
-# #   description = "${var.jenkins_sg} security group"
-# #   vpc_id      = module.vpc.vpc_id
 
- 
-# #   ingress_with_source_security_group_id = [
-# #     {
-# #       rule                     = "http-80-tcp"
-# #       source_security_group_id = module.alb_sg.security_group_id
-# #     },
-# #     {
-# #       from_port                = 8080
-# #       to_port                  = 8080
-# #       protocol                 = 6
-# #       description              = "alb to jenkins"
-# #       source_security_group_id = module.alb_sg.security_group_id
-# #     }
-# #   ]
-# #   egress_rules = ["all-all"]
+# module "db" {
+#   source = "terraform-aws-modules/rds/aws"
+#   identifier = "${local.name}-db"
 
-# #   tags = local.tags
-# # }
+#   # All available versions: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html#PostgreSQL.Concepts
+#   engine                   = "postgres"
+#   engine_version           = "14"
+#   engine_lifecycle_support = "open-source-rds-extended-support-disabled"
+#   family                   = "postgres14" # DB parameter group
+#   major_engine_version     = "14"         # DB option group
+#   instance_class           = "db.t3.medium"
+
+#   allocated_storage     = 20
+#   max_allocated_storage = 100
+
+#   # NOTE: Do NOT use 'user' as the value for 'username' as it throws:
+#   # "Error creating DB Instance: InvalidParameterValue: MasterUsername
+#   # user cannot be used as it is a reserved word used by the engine"
+#   db_name  = "completePostgresql"
+#   username = "complete_postgresql"
+#   port     = 5432
+#   password = "somepasswordhere"
+#   iam_database_authentication_enabled = true #set to true to enable token access
+  
+#   manage_master_user_password = false
+#   manage_master_user_password_rotation              = false
+
+#   multi_az               = true
+#   db_subnet_group_name   = module.vpc.database_subnet_group
+#   vpc_security_group_ids = [module.rds_security_group.security_group_id]
+
+#   backup_retention_period = 1
+#   skip_final_snapshot     = true
+#   deletion_protection     = false
+
+#   tags = local.tags
+
+# }
+
+
+
+# ##################################################################################################
+# ##################################################################################################
+# ##################################################################################################
+# ##################################################################################################
+# ##################################################################################################
+
