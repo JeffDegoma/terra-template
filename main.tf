@@ -71,7 +71,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
 
-  name = local.name
+  name = data.terraform_remote_state.remote.outputs.vpc.name
   cidr = local.vpc_cidr
   create_database_subnet_group = true
   //specify database subnet group name
@@ -90,7 +90,6 @@ module "vpc" {
 
   # tags = local.tags
 }
-
 
 
 
